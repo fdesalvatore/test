@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lettore QR Code</title>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+      body
+      {
+	    background-color: #f5f7fa;
+	    font-family: Roboto, sans-serif;
+	    margin: 20px;
+	  }
+	  button
+	  {
+	    background-color: #7a1f2a;
+		border: 0;
+		border-radius: 20px;
+		color: #ffffff;
+		font-size: 18px;
+		font-weight: bold;
+		margin-right: 5px;
+		padding: 14px;
+	  }
+	  .male
+	  {
+	    color: #2196f3;
+	  }
+	  .female
+	  {
+	    color: #e91e63;
+	  }
+	  .section
+	  {
+	    display: none;
+	  }
+	  .header
+	  {
+	    color: #7a1f2a;
+		font-size: 30px;
+		font-weight: bold;
+		margin-bottom: 15px;
+	  }
+	  .label
+	  {
+	    font-weight: bold;
+	  }
+	  .separator
+	  {
+	    background-color: #7a1f2a;
+		border-radius: 10px;
+	    color: #7a1f2a;
+		height: 4px;
+		margin-bottom: 15px;
+		margin-top: 15px;
+	  }
+	  #scanner
+	  {
+	    border: 2px #7a1f2a solid;
+	    border-radius: 20px;
+	    box-shadow: 0 4px 12px #404040;
+	    overflow: hidden;
+	  }
+	  #codes
+	  {
+	    display: none;
+	  }
+	  #current_code
+	  {
+	    font-weight: bold;
+	  }
+	  #shirt
+	  {
+	    stroke: #000000;
+        stroke-width: 4;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+	  }
+	  #shirt_name
+	  {
+	    font-family: Roboto, sans-serif;
+	    font-size: 90px;
+		font-weight: bold;
+		letter-spacing: -2px;
+		paint-order: stroke fill;
+		stroke-width: 7px;
+		text-transform: uppercase;
+	  }
+	  #shirt_number
+	  {
+	    font-family: Roboto, sans-serif;
+	    font-size: 180px;
+		font-weight: bold;
+		paint-order: stroke fill;
+		stroke-width: 7px;
+	  }
+	  #error_message
+	  {
+	    color: red;
+		font-size: 30px;
+		font-weight: bold;
+	  }
+    </style>
+  </head>
+  <body onLoad="init()">
+    <div id="scan" class="section">
+	  <div id="log"></div>
+	  <div class="header">Scansione</div>
+	  <div id="scanner" onClick="switchCamera()"></div>
+	  <hr class="separator">
+	  <div class="header">Ultime scansioni</div>
+	  <div id="last_scans"></div>
+	  <hr class="separator">
+	  <div class="header">Test</div>
+	  <div id="test_buttons"></div>
+	  <br>
+	  <div id="codes">
+	    <div>QR code selezionato: <span id="current_code"></span></div>
+        <img id="code_image">
+      </div>
+	</div>
+    <div id="result" class="section">
+	  <div id="data">
+        <div><span class="label">Pettorale:</span> <span id="pettorale"></span></div>
+        <div><span class="label">Nome:</span> <span id="nome"></span></div>
+	    <div><span class="label">Cognome:</span> <span id="cognome"></span></div>
+	    <div><span class="label">Sesso:</span> <span id="sesso"></span></div>
+	    <div><span class="label">Classe:</span> <span id="classe"></span></div>
+	  </div>
+	  <br>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="78 279 1008 910" width="300px">
+        <path id="shirt" d="
+          M585 1169
+          C465 1169 345 1156 345 1156
+          V668
+          C295 717 250 767 249 768
+          C246 771 241 772 237 770
+          C182 735 101 658 98 655
+          C95 652 94 648 96 644
+          C100 635 206 427 255 390
+          C305 352 465 301 472 299
+          C475 298 479 299 481 302
+          C481 302 488 310 500 321
+          C522 342 551 353 581 353
+          C611 353 640 342 662 321
+          C674 310 681 302 681 302
+          C683 299 687 298 690 299
+          C697 301 857 352 907 390
+          C956 427 1062 635 1066 644
+          C1068 648 1067 652 1064 655
+          C1061 658 980 735 925 770
+          C921 772 916 771 913 768
+          C912 767 867 717 826 668
+          V1156
+          C826 1151 822 1155 817 1156
+          C817 1156 705 1169 585 1169
+          Z
+        "/>
+        <text id="shirt_name" x="582" y="523" text-anchor="middle" dominant-baseline="middle"></text>
+		<text id="shirt_number" x="582" y="800" text-anchor="middle" dominant-baseline="middle"></text>
+      </svg>
+	  <hr class="separator">
+	  <button onClick="newScan()">Nuova scansione</button>
+	</div>
+    <div id="error" class="section">
+	  <div id="error_message"></div>
+	  <hr class="separator">
+	  <button onClick="newScan()">Nuova scansione</button>
+	</div>
+    <script>
+	  const INIT_SCANNER = true;
+	 
+	  const BLACK = "#000000";
+	  const WHITE = "#FFFFFF";
+	 
+	  const data = new Map();
+	  data.set("1", ["Mario", "Bianchi", true, 5, "A", "#ffffff", true]);
+	  data.set("2", ["Carlotta", "Azzurri", false, 3, "B", "#195da4", false]);
+	  data.set("3", ["Filippo", "Gialli", true, 2, "C", "#fede11", true]);
+	  data.set("4", ["Angelica", "Verdi", false, 1, "D", "#009136", false]);
+	  data.set("5", ["Riccardo", "Rossi", true, 4, "E", "#e1011c", false]);
+	  data.set("6", ["Giovanni", "Arancioni", true, 5, "F", "#f39301", true]);
+	  data.set("7", ["Francesca", "Blu", false, 2, "G", "#002a54", false]);
+	  
+	  const codes = new Map();
+	  codes.set("1", "1.png");
+	  codes.set("2", "2.png");
+	  codes.set("3", "3.png");
+	  codes.set("4", "4.png");
+	  codes.set("5", "5.png");
+	  codes.set("6", "6.png");
+	  codes.set("7", "7.png");
+	  codes.set("8", "8.png");
+	  
+	  codes.forEach((image, code) =>
+	  {
+	    const container = document.getElementById("test_buttons");
+		
+		const button = document.createElement("button");
+		button.textContent = code;
+		button.onclick = () => showCode(code, image);
+
+		container.appendChild(button);
+	  });
+	
+	  let scanner;
+	  let cameras;
+	  let currentCamera = 0;
+	
+	  function init()
+	  {
+	    scanner = new Html5Qrcode("scanner");
+		
+        Html5Qrcode.getCameras().then(cams =>
+	    {
+		  cameras = cams;
+		  
+		  if (cameras.length > 0)
+		  {
+		    newScan();
+			
+			if (INIT_SCANNER)
+			{
+		      initScanner().catch(err => setError(err));
+			}
+		  }
+		  else
+		  {
+		    setError("Nessuna fotocamera trovata");
+		  }
+        }).catch(err => setError(err))
+      }
+	  
+	  function newScan()
+	  {
+	    show("scan");
+	  }
+
+	  function initScanner()
+	  {
+        return scanner.start
+		(
+		  cameras[currentCamera].id,
+          {
+            fps: 20,
+            qrbox: 300
+          },
+          onScanSuccess
+		);
+	  }
+	  
+	  function switchCamera()
+	  {
+	  console.log("switching camera from " + currentCamera + " of " + cameras.length);
+
+	    if (cameras.length > 1)
+		{
+	      scanner.stop().then(_ =>
+		  {
+	        currentCamera = (currentCamera + 1) % cameras.length;
+			
+			console.log("new currentCamera " + currentCamera);
+
+		    initScanner();
+		  }).catch(err => setError(err));
+		}
+	  }
+
+	  function onScanSuccess(text, result)
+	  {
+	    const res = data.get(text);
+	  
+	    if (res == null)
+	    {
+          setError("Codice " + text + " non trovato!");
+	    }
+	    else
+	    {
+		  const lastScans = document.getElementById("last_scans");
+		  
+		  const lastScan = document.createElement("div");
+		  lastScan.innerHTML = "<b>" + text + "</b>" + " - " + res[0] + " " + res[1] + " (" + res[3] + res[4] + ")";
+		  
+		  lastScans.appendChild(lastScan);
+		
+	      setText("pettorale", text);
+	      setText("nome", res[0]);
+		  setText("cognome", res[1]);
+		  setHtml("sesso", res[2] == true ? "<i class='fa-solid fa-mars'></i> Maschio" : "<i class='fa-solid fa-mars'></i> Femmina");
+		  setClass("sesso", res[2] == true ? "male" : "female")
+		  setText("classe", res[3] + res[4]);
+		  
+		  document.getElementById("shirt").setAttribute("fill", res[5]);
+
+		  const shirtText = document.getElementById("shirt_name");
+		  
+		  shirtText.setAttribute("fill", getColor(res[6]));
+		  shirtText.setAttribute("stroke", getColor(!res[6]));
+		  setText("shirt_name", res[0]);
+		  
+		  const shirtNumber = document.getElementById("shirt_number");
+		  
+		  shirtNumber.setAttribute("fill", getColor(res[6]));
+		  shirtNumber.setAttribute("stroke", getColor(!res[6]));
+		  setText("shirt_number", text);
+
+	      show("result");
+	    }
+	  }
+	  
+      function show(id)
+	  {
+	    document.querySelectorAll(".section").forEach(el => el.style.display = "none");
+	  
+	    document.getElementById(id).style.display = "block";
+	  }
+	
+	  function setText(id, text)
+	  {
+	    document.getElementById(id).textContent = text;
+	  }
+	  
+	  function setHtml(id, html)
+	  {
+	    document.getElementById(id).innerHTML = html;
+	  }
+	  
+	  function setClass(id, className)
+	  {
+	    document.getElementById(id).className = className;
+	  }
+	
+	  function setError(message)
+	  {
+	    setText("error_message", message);
+	  
+	    show("error");
+      }
+	  
+	  function getColor(isBlack)
+	  {
+	    return isBlack == true ? BLACK : WHITE;
+	  }
+
+	  function showCode(code, image)
+	  {
+		document.getElementById("codes").style.display = "block";
+		
+		setText("current_code", code);
+		  
+	    document.getElementById("code_image").src = image;
+	    document.getElementById("code_image").onclick = () => onScanSuccess(code);
+	  }
+	  
+(function() {
+  const logDiv = document.createElement("pre");
+  logDiv.style.cssText = "position:fixed;bottom:0;left:0;right:0;max-height:40%;overflow:auto;background:#000;color:#0f0;padding:10px;font-size:12px;z-index:99999;";
+  document.body.appendChild(logDiv);
+
+  const oldLog = console.log;
+  console.log = (...args) => {
+    oldLog(...args);
+    logDiv.textContent += args.join(" ") + "\n";
+  };
+})()
+	</script>
+  </body>
+</html>
