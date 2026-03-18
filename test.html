@@ -19,6 +19,7 @@
 		border: 0;
 		border-radius: 20px;
 		color: #ffffff;
+		cursor: pointer;
 		font-size: 18px;
 		font-weight: bold;
 		margin-right: 5px;
@@ -55,6 +56,10 @@
 		height: 4px;
 		margin-bottom: 15px;
 		margin-top: 15px;
+	  }
+	  .last_scan
+	  {
+	    line-height: 23px;
 	  }
 	  #scanner
 	  {
@@ -102,9 +107,46 @@
 		font-size: 30px;
 		font-weight: bold;
 	  }
+	  #code_image
+	  {
+	    cursor: pointer;
+	  }
+      #ok
+      {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 120px;
+        opacity: 0;
+        pointer-events: none;
+		color: #008000;
+      }
+      .ok-start
+	  {
+        animation: fadeZoom 0.7s ease-in-out;
+      }
+      @keyframes fadeZoom
+	  {
+        0%
+		{
+          transform: translate(-50%, -50%) scale(10);
+          opacity: 0;
+        }
+        50%
+		{
+          opacity: 1;
+        }
+        100%
+		{
+          transform: translate(-50%, -50%) scale(1);
+          opacity: 0;
+        }
+      }
     </style>
   </head>
   <body onLoad="init()">
+    <div id="ok"><i class="fa-solid fa-circle-check"></i></div>
     <div id="scan" class="section">
 	  <div id="log"></div>
 	  <div class="header">Scansione</div>
@@ -169,7 +211,10 @@
 	  <hr class="separator">
 	  <button onClick="newScan()">Nuova scansione</button>
 	</div>
-    <script>	 
+    <script>
+	  const OK_SOUND = new Audio("ok.mp3");
+	  const ERROR_SOUND = new Audio("error.mp3");
+	
 	  const BLACK = "#000000";
 	  const WHITE = "#FFFFFF";
 	 
@@ -327,12 +372,21 @@
 	      }
 	      else
 	      {
+		    OK_SOUND.play();
+            
+			const okIcon = document.getElementById("ok");
+
+            okIcon.className = "";
+            void okIcon.offsetWidth;
+            okIcon.className = "ok-start";
+		  
 		    const lastScans = document.getElementById("last_scans");
 		    
 		    const lastScan = document.createElement("div");
+			lastScan.className = "last_scan";
 		    lastScan.innerHTML = "<b>" + text + "</b>" + " - " + res[0] + " " + res[1] + " (" + res[3] + res[4] + ")";
 		    
-		    lastScans.appendChild(lastScan);
+		    lastScans.prepend(lastScan);
 		  
 	        setText("pettorale", text);
 	        setText("nome", res[0]);
@@ -384,6 +438,8 @@
 	
 	  function setError(message)
 	  {
+	    ERROR_SOUND.play();
+	  
 	    setText("error_message", message);
 	  
 	    show("error");
