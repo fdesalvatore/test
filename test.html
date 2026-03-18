@@ -169,9 +169,7 @@
 	  <hr class="separator">
 	  <button onClick="newScan()">Nuova scansione</button>
 	</div>
-    <script>
-	  const INIT_SCANNER = true;
-	 
+    <script>	 
 	  const BLACK = "#000000";
 	  const WHITE = "#FFFFFF";
 	 
@@ -193,6 +191,8 @@
 	  codes.set("6", "6.png");
 	  codes.set("7", "7.png");
 	  codes.set("8", "8.png");
+	  
+	  let runScanner = true;
 	  
 	  codes.forEach((image, code) =>
 	  {
@@ -221,7 +221,7 @@
 		  {
 		    newScan();
 			
-			if (INIT_SCANNER)
+			if (run_scanner)
 			{
 		      initScanner().catch(err => setError(err));
 			}
@@ -235,6 +235,8 @@
 	  
 	  function newScan()
 	  {
+	    run_scanner = true;
+
 	    show("scan");
 	  }
 
@@ -313,45 +315,49 @@
 
 	  function onScanSuccess(text, result)
 	  {
-	  console.log(text);
-	    const res = data.get(text);
-	  
-	    if (res == null)
-	    {
-          setError("Codice " + text + " non trovato!");
-	    }
-	    else
-	    {
-		  const lastScans = document.getElementById("last_scans");
-		  
-		  const lastScan = document.createElement("div");
-		  lastScan.innerHTML = "<b>" + text + "</b>" + " - " + res[0] + " " + res[1] + " (" + res[3] + res[4] + ")";
-		  
-		  lastScans.appendChild(lastScan);
-		
-	      setText("pettorale", text);
-	      setText("nome", res[0]);
-		  setText("cognome", res[1]);
-		  setHtml("sesso", res[2] == true ? "<i class='fa-solid fa-mars'></i> Maschio" : "<i class='fa-solid fa-mars'></i> Femmina");
-		  setClass("sesso", res[2] == true ? "male" : "female")
-		  setText("classe", res[3] + res[4]);
-		  
-		  document.getElementById("shirt").setAttribute("fill", res[5]);
+	    if (run_scanner)
+		{
+		  run_scanner = false;
 
-		  const shirtText = document.getElementById("shirt_name");
+	      const res = data.get(text);
 		  
-		  shirtText.setAttribute("fill", getColor(res[6]));
-		  shirtText.setAttribute("stroke", getColor(!res[6]));
-		  setText("shirt_name", res[0]);
+	      if (res == null)
+	      {
+            setError("Codice " + text + " non trovato!");
+	      }
+	      else
+	      {
+		    const lastScans = document.getElementById("last_scans");
+		    
+		    const lastScan = document.createElement("div");
+		    lastScan.innerHTML = "<b>" + text + "</b>" + " - " + res[0] + " " + res[1] + " (" + res[3] + res[4] + ")";
+		    
+		    lastScans.appendChild(lastScan);
 		  
-		  const shirtNumber = document.getElementById("shirt_number");
+	        setText("pettorale", text);
+	        setText("nome", res[0]);
+		    setText("cognome", res[1]);
+		    setHtml("sesso", res[2] == true ? "<i class='fa-solid fa-mars'></i> Maschio" : "<i class='fa-solid fa-mars'></i> Femmina");
+		    setClass("sesso", res[2] == true ? "male" : "female")
+		    setText("classe", res[3] + res[4]);
+		    
+		    document.getElementById("shirt").setAttribute("fill", res[5]);
 		  
-		  shirtNumber.setAttribute("fill", getColor(res[6]));
-		  shirtNumber.setAttribute("stroke", getColor(!res[6]));
-		  setText("shirt_number", text);
-
-	      show("result");
-	    }
+		    const shirtText = document.getElementById("shirt_name");
+		    
+		    shirtText.setAttribute("fill", getColor(res[6]));
+		    shirtText.setAttribute("stroke", getColor(!res[6]));
+		    setText("shirt_name", res[0]);
+		    
+		    const shirtNumber = document.getElementById("shirt_number");
+		    
+		    shirtNumber.setAttribute("fill", getColor(res[6]));
+		    shirtNumber.setAttribute("stroke", getColor(!res[6]));
+		    setText("shirt_number", text);
+		  
+	        show("result");
+	      }
+		}
 	  }
 	  
       function show(id)
@@ -397,18 +403,6 @@
 	    document.getElementById("code_image").src = image;
 	    document.getElementById("code_image").onclick = () => onScanSuccess(code);
 	  }
-	  
-(function() {
-  const logDiv = document.createElement("pre");
-  logDiv.style.cssText = "position:fixed;bottom:0;left:0;right:0;max-height:40%;overflow:auto;background:#000;color:#0f0;padding:10px;font-size:12px;z-index:99999;";
-  document.body.appendChild(logDiv);
-
-  const oldLog = console.log;
-  console.log = (...args) => {
-    oldLog(...args);
-    logDiv.textContent += args.join(" ") + "\n";
-  };
-})()
 	</script>
   </body>
 </html>
