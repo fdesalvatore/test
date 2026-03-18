@@ -265,24 +265,37 @@
 	  }
 	  
       function initCameras(cams)
-	  {
-        const filteredCameras {};
+	  {	  
+        const filteredCameras =
+		{
+		  back: [],
+		  front: [],
+		  other: []
+		};
 		
-		filteredCameras.back = cams.filter(cam =>
+		cams.forEach(cam =>
 		{
 		  const label = cam.label.toLowerCase();
 		  
-		  return label.includes("back") || label.includes("rear") || label.includes("environment");
-		});
-		
-		filteredCameras.front = cams.filter(cam =>
-		{
-		  const label = cam.label.toLowerCase();
+		  let list;
 		  
-		  return label.includes("front") || label.includes("user");
+		  if (label.includes("back") || label.includes("rear") || label.includes("environment"))
+		  {
+		    list = filteredCameras.back;
+		  }
+		  else if (label.includes("front") || label.includes("user") || label.includes("selfie"))
+		  {
+		    list = filteredCameras.front;
+		  }
+		  else
+		  {
+		    list = filteredCameras.other;
+		  }
+		  
+		  list.push(cam);
 		});
-		
-		cameras = [extractCamera(filteredCameras.back), extractCamera(filteredCameras.front)].filter(cam => cam != null);
+				
+		cameras = [extractCamera(filteredCameras.back), extractCamera(filteredCameras.front), extractCamera(filteredCameras.other)].filter(cam => cam);
       }
 	  
 	  function extractCamera(cams)
@@ -292,8 +305,8 @@
 		  return null;
 		}
 		
-		return cams.find(cam.label.toLowerCase().trim() == "back camera") ||
-		       cams.find(!cam.label.includes("(") && !cam.label.includes(")")) ||
+		return cams.find(cam => cam.label.toLowerCase().trim() == "back camera") ||
+		       cams.find(cam => !cam.label.includes("(") && !cam.label.includes(")")) ||
 			   [...cams].sort((a, b) => a.label.length - b.label.length)[0] ||
 			   cams[0];
 	  }
