@@ -215,9 +215,9 @@
 		
         Html5Qrcode.getCameras().then(cams =>
 	    {
-		  cameras = cams;
-		  
-		  if (cameras.length > 0)
+          initCameras(cams);
+		
+		  if (cams.length > 0)
 		  {
 		    newScan();
 			
@@ -253,19 +253,49 @@
 	  
 	  function switchCamera()
 	  {
-	  console.log("switching camera from " + currentCamera + " of " + cameras.length);
-
 	    if (cameras.length > 1)
 		{
 	      scanner.stop().then(_ =>
 		  {
 	        currentCamera = (currentCamera + 1) % cameras.length;
-			
-			console.log("new currentCamera " + currentCamera);
 
 		    initScanner();
 		  }).catch(err => setError(err));
 		}
+	  }
+	  
+      function initCameras(cams)
+	  {
+        const filteredCameras {};
+		
+		filteredCameras.back = cams.filter(cam =>
+		{
+		  const label = cam.label.toLowerCase();
+		  
+		  return label.includes("back") || label.includes("rear") || label.includes("environment");
+		});
+		
+		filteredCameras.front = cams.filter(cam =>
+		{
+		  const label = cam.label.toLowerCase();
+		  
+		  return label.includes("front") || label.includes("user");
+		});
+		
+		cameras = [extractCamera(filteredCameras.back), extractCamera(filteredCameras.front)].filter(cam => cam != null);
+      }
+	  
+	  function extractCamera(cams)
+	  {
+        if (cams.length == 0)
+		{
+		  return null;
+		}
+		
+		return cams.find(cam.label.toLowerCase().trim() == "back camera") ||
+		       cams.find(!cam.label.includes("(") && !cam.label.includes(")")) ||
+			   [...cams].sort((a, b) => a.label.length - b.label.length)[0] ||
+			   cams[0];
 	  }
 
 	  function onScanSuccess(text, result)
